@@ -1,10 +1,10 @@
-# Tarkov Optibuild <a href='https://ko-fi.com/T1P023QR7T' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+# Tarkov Optibuild <a href="https://ko-fi.com/T1P023QR7T" target="_blank" rel="noopener noreferrer"><img height="36" style="border:0px;height:36px;" src="https://storage.ko-fi.com/cdn/kofi2.png?v=6" alt="Soutenir sur Ko-fi" /></a>
 
 Site web d’optimisation **automatique** de builds d’armes pour Escape from Tarkov.
 
 Tu choisis une arme, tes niveaux de traders, le flea et un objectif (recul, ergo, ou équilibré). L’outil explore les combinaisons **compatibles** et renvoie le meilleur build — ce n’est pas un builder manuel.
 
-Données : [json.tarkov.dev](https://json.tarkov.dev) (même source que [tarkov.dev](https://tarkov.dev)). **Non affilié à Battlestate Games.**
+Site : [tarkov-optibuild.vercel.app](https://tarkov-optibuild.vercel.app). Données : [json.tarkov.dev](https://json.tarkov.dev) (même source que [tarkov.dev](https://tarkov.dev)). **Non affilié à Battlestate Games.**
 
 Soutenir : [Ko-fi](https://ko-fi.com/T1P023QR7T). Bugs et idées : bouton **Bug / idée** sur le site, ou [issues GitHub](https://github.com/Mbappinho/tarkov-optibuild/issues) (review avant merge).
 
@@ -21,7 +21,7 @@ Le premier chargement du catalogue peut prendre quelques secondes (`/regular/ite
 
 L’API GraphQL `api.tarkov.dev/graphql` est down depuis juillet 2026. On n’en dépend plus. Les dumps JSON sont l’usage prévu par tarkov.dev ; on s’identifie (`User-Agent`) et on ne refetch pas plus d’une fois par heure.
 
-Avant une mise en ligne : créer le repo public `Mbappinho/tarkov-optibuild` (sinon le bouton Bug / idée 404), renseigner l’hébergeur sur `/legal`, et limiter l’abus (`/api/optimize` 12 req/min/IP, `/api/weapons` 30 req/min/IP). Détail : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Avant une mise en ligne : le repo public est `Mbappinho/tarkov-optibuild`. Hébergeur : Vercel Inc. Quota : `/api/optimize` 12 req/min/IP, `/api/weapons` 30 req/min/IP. Détail : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## MVP actuel
 

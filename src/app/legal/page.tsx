@@ -109,9 +109,16 @@ export default function LegalPage() {
           .
         </p>
         <p className="text-sm leading-6 text-muted">
-          Hébergeur : à renseigner selon le déploiement (nom, adresse, pays).
-          Tant que ce bloc n’est pas complété, le site ne devrait pas être
-          présenté comme un service professionnel en France.
+          Hébergeur :{" "}
+          <a
+            href="https://vercel.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-signal underline-offset-2 hover:underline"
+          >
+            Vercel Inc.
+          </a>
+          , 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis.
         </p>
         <p className="text-sm leading-6 text-muted">
           Les dons via{" "}

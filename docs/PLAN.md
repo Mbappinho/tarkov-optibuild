@@ -71,4 +71,4 @@ Import stash, 4ᵉ objectif, retune des coeffs équilibré, offres Ref/GP.
 
 Livré dans le code : disclaimer, `/legal`, cache fetch 1 h, User-Agent, rate-limit, bouton Bug / idée → GitHub, Ko-fi.
 
-À faire hors repo : créer `Mbappinho/tarkov-optibuild` en public, premier commit, déployer, compléter l’hébergeur sur `/legal`.
+Prod : [tarkov-optibuild.vercel.app](https://tarkov-optibuild.vercel.app). Repo GitHub lié à Vercel.

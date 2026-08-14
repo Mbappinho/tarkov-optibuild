@@ -104,4 +104,4 @@ Style « HUD tactique » inspiré de l'UI in-game. Tokens dans `src/app/globals.
 
 ## Lancement public
 
-Checklist restante côté ops (pas du code) : repo GitHub public `Mbappinho/tarkov-optibuild` pour que les issues existent ; nom/adresse de l’hébergeur sur `/legal` ; premier commit et déploiement. Le quota IP est par instance : sur du serverless il est faible, il limite l’abus évident, pas un botnet.
+Checklist ops : site en prod sur [tarkov-optibuild.vercel.app](https://tarkov-optibuild.vercel.app) (compte Vercel `mbappinho`, repo GitHub lié). Le quota IP est par instance : sur du serverless il est faible, il limite l’abus évident, pas un botnet.
