@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0d0f0d;
+  --color-panel: #151917;
+  --color-panel-raised: #1b211d;
+  --color-line: rgb(190 200 180 / 0.14);
+  --color-line-strong: rgb(190 200 180 / 0.28);
+  --color-fog: #e3e5dd;
+  --color-muted: #8a9087;
+  --color-signal: #d08c46;
+  --color-signal-deep: #5c3d1e;
+  --color-olive: #7fa653;
+  --color-olive-deep: #2c3a20;
+  --color-danger: #c4483c;
+  --color-danger-deep: #4a1d18;
+  --color-background: var(--color-ink);
+  --color-foreground: var(--color-fog);
+  --font-display: var(--font-rajdhani), "Arial Narrow", Arial, sans-serif;
+  --font-mono: var(--font-jetbrains), "Courier New", monospace;
+}
+
+body {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(1200px 600px at 50% -20%, rgb(208 140 70 / 0.05), transparent),
+    linear-gradient(rgb(190 200 180 / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(190 200 180 / 0.03) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    40px 40px,
+    40px 40px;
+  color: var(--color-fog);
+  font-family: var(--font-display);
+}
+
+::selection {
+  background: var(--color-signal-deep);
+  color: var(--color-fog);
+}
+
+/* Coin chanfreiné — le motif du design system. */
+.chamfer {
+  clip-path: polygon(
+    10px 0,
+    100% 0,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    0 100%,
+    0 10px
+  );
+}
+
+.chamfer-sm {
+  clip-path: polygon(
+    6px 0,
+    100% 0,
+    100% calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    0 100%,
+    0 6px
+  );
+}
+
+/* Panneau technique : fond mat + bordure cheveux + chanfrein. */
+.hud-panel {
+  background: var(--color-panel);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.hud-panel-raised {
+  background: var(--color-panel-raised);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+/* Crochets de réticule sur l'élément actif / sélectionné. */
+.corner-brackets {
+  position: relative;
+}
+
+.corner-brackets::before,
+.corner-brackets::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.corner-brackets::before {
+  top: 0;
+  left: 0;
+  border-top: 1px solid var(--color-signal);
+  border-left: 1px solid var(--color-signal);
+}
+
+.corner-brackets::after {
+  bottom: 0;
+  right: 0;
+  border-bottom: 1px solid var(--color-signal);
+  border-right: 1px solid var(--color-signal);
+}
+
+/* Micro-label de fiche technique. */
+.hud-label {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.hud-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+.hud-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.hud-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+}
+
+.hud-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 1px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

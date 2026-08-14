@@ -1,0 +1,30 @@
+{
+  "name": "tarkov-optibuild",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test:optimizer": "npx tsx src/lib/optimizer/self-test.ts",
+    "test:live": "npx tsx src/lib/tarkov/live-test.ts",
+    "test:profile": "npx tsx src/lib/optimizer/profile-live.ts"
+  },
+  "dependencies": {
+    "next": "16.3.0",
+    "playwright-core": "^1.62.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

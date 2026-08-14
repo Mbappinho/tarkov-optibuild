@@ -1,0 +1,17 @@
+name: Suggestion
+description: Une idée d’amélioration à reviewer avant de la coder.
+title: "[idée] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: L’idée
+      description: Qu’est-ce que ça changerait pour le joueur.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Pourquoi
+      description: Cas d’usage, armes concernées, alternative actuelle.
