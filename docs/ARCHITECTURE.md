@@ -79,7 +79,7 @@ Optiques (`mod_scope`, `mod_nvg`) et lance-grenades (`mod_launcher`) sont **hors
 | `src/lib/site.ts` | Ko-fi, repo GitHub, User-Agent, URL d’issue |
 | `src/lib/http/rate-limit.ts` | Quota mémoire par IP |
 | `src/app/legal/page.tsx` | Avertissement, source, vie privée, mentions |
-| `src/components/FeedbackDialog.tsx` | Formulaire bug / idée → issue GitHub |
+| `src/components/FeedbackDialog.tsx` | Formulaire bug / idée → lien GitHub (`<a target=_blank>`, templates `.md`) |
 | `src/lib/optimizer/optimize.ts` | Recherche du build |
 | `src/lib/optimizer/profile-live.ts` | Baseline 4 s + oracle 30 s |
 | `src/lib/optimizer/magazine.ts` | Choix chargeur 30 / 60 (ergo, load, check) |

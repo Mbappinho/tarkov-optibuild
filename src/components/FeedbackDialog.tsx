@@ -24,9 +24,11 @@ export function FeedbackDialog({
   const [kind, setKind] = useState<FeedbackKind>("bug");
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
+  const [liveUrl, setLiveUrl] = useState(pageUrl);
 
   useEffect(() => {
     if (!open) return;
+    setLiveUrl(window.location.href);
     titleRef.current?.focus();
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -37,19 +39,17 @@ export function FeedbackDialog({
 
   if (!open) return null;
 
-  function submit() {
-    const body = feedbackIssueBody({
+  const href = githubNewIssueUrl(
+    kind,
+    title,
+    feedbackIssueBody({
       kind,
       details,
-      pageUrl,
+      pageUrl: liveUrl ?? pageUrl,
       weaponName,
-      userAgent: navigator.userAgent,
-    });
-    window.open(githubNewIssueUrl(kind, title, body), "_blank", "noopener,noreferrer");
-    onClose();
-    setTitle("");
-    setDetails("");
-  }
+      userAgent: typeof navigator === "undefined" ? undefined : navigator.userAgent,
+    }),
+  );
 
   return (
     <div
@@ -109,17 +109,20 @@ export function FeedbackDialog({
             />
           </label>
           <p className="text-[11px] leading-4 text-muted">
-            Ça ouvre une issue GitHub (connexion requise). L’URL actuelle et
-            l’arme sélectionnée sont jointes pour le review.
+            Ça ouvre GitHub dans un nouvel onglet (connexion requise). L’URL
+            actuelle et l’arme sélectionnée sont jointes pour le review.
           </p>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!title.trim() && !details.trim()}
-            className="chamfer bg-signal px-4 py-3 text-base font-bold tracking-[0.15em] text-ink uppercase transition-colors hover:bg-fog disabled:cursor-not-allowed disabled:opacity-40"
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="chamfer bg-signal px-4 py-3 text-center text-base font-bold tracking-[0.15em] text-ink uppercase transition-colors hover:bg-fog"
+            onClick={() => {
+              window.setTimeout(onClose, 200);
+            }}
           >
-            Envoyer sur GitHub
-          </button>
+            Ouvrir sur GitHub
+          </a>
         </div>
       </div>
     </div>

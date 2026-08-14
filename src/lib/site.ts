@@ -13,16 +13,20 @@ export const USER_AGENT = `tarkov-optibuild/0.1 (+https://github.com/${GITHUB_RE
 
 export type FeedbackKind = "bug" | "suggestion";
 
+const BODY_MAX = 1500;
+
 export function githubNewIssueUrl(
   kind: FeedbackKind,
   title: string,
   body: string,
 ): string {
   const labels = kind === "bug" ? "bug" : "enhancement";
+  const template = kind === "bug" ? "bug.md" : "suggestion.md";
   const params = new URLSearchParams({
-    title: title.trim() || (kind === "bug" ? "Bug" : "Suggestion"),
+    template,
+    title: title.trim() || (kind === "bug" ? "[bug] " : "[idée] "),
     labels,
-    body,
+    body: body.slice(0, BODY_MAX),
   });
   return `https://github.com/${GITHUB_REPO}/issues/new?${params.toString()}`;
 }
@@ -34,6 +38,7 @@ export function feedbackIssueBody(input: {
   weaponName?: string;
   userAgent?: string;
 }): string {
+  const ua = (input.userAgent ?? "").slice(0, 180);
   const lines = [
     `## ${input.kind === "bug" ? "Bug" : "Suggestion"}`,
     "",
@@ -43,7 +48,7 @@ export function feedbackIssueBody(input: {
     "",
     `- Page : ${input.pageUrl || "inconnue"}`,
     `- Arme : ${input.weaponName || "aucune"}`,
-    `- Navigateur : ${input.userAgent || "inconnu"}`,
+    `- Navigateur : ${ua || "inconnu"}`,
   ];
   return lines.join("\n");
 }
