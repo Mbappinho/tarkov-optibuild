@@ -6,6 +6,8 @@ import type { OptimizeResult } from "@/lib/optimizer/optimize";
 import { parseShareQuery, serializeShareQuery, snapshotFromResult } from "@/lib/share/query";
 import type { SnapshotPart } from "@/lib/optimizer/hydrate";
 import { shoppingListText } from "@/lib/optimizer/shopping";
+import { isI18nError, mapApiError, type I18nError } from "@/lib/i18n/api-error";
+import type { Locale } from "@/lib/i18n/locale";
 import { defaultTraderLevels } from "@/lib/tarkov/defaults";
 import type {
   MagazineClass,
@@ -14,6 +16,7 @@ import type {
   TraderName,
   WeaponSummary,
 } from "@/lib/tarkov/types";
+import { useI18n } from "./I18nProvider";
 import { TopBar } from "./TopBar";
 import { WeaponPicker } from "./WeaponPicker";
 import { SettingsPanel } from "./SettingsPanel";
@@ -55,6 +58,7 @@ function bootFromSearch(searchParams: URLSearchParams): BootState {
 }
 
 export function OptimizerApp() {
+  const { locale, ready, t, numberLocale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,7 +69,7 @@ export function OptimizerApp() {
   const [meta, setMeta] = useState<{ items: number; fetchedAt: string } | null>(
     null,
   );
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<I18nError | null>(null);
   const [query, setQuery] = useState("");
   const [queryEdited, setQueryEdited] = useState(false);
   const [weaponId, setWeaponId] = useState(boot.weaponId);
@@ -85,7 +89,7 @@ export function OptimizerApp() {
   );
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<OptimizeResult | null>(null);
-  const [optError, setOptError] = useState<string | null>(null);
+  const [optError, setOptError] = useState<I18nError | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "ok" | "err">("idle");
   const [copyListState, setCopyListState] = useState<"idle" | "ok" | "err">(
     "idle",
@@ -96,26 +100,31 @@ export function OptimizerApp() {
   );
   const pendingAutoRef = useRef(boot.auto);
   const pendingHydrateRef = useRef<SnapshotPart[] | null>(boot.hydrate);
+  const snapshotRef = useRef(snapshotParts);
+  snapshotRef.current = snapshotParts;
+  const prevLocaleRef = useRef<Locale | null>(null);
 
   useEffect(() => {
+    if (!ready) return;
     let cancelled = false;
-    fetch("/api/weapons")
+    fetch(`/api/weapons?lang=${locale}`)
       .then(async (response) => {
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error ?? "Catalogue indisponible");
+        if (!response.ok) throw mapApiError(payload);
         if (cancelled) return;
         setWeapons(payload.weapons);
         setMeta(payload.meta);
+        setLoadError(null);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : "Erreur réseau");
+          setLoadError(isI18nError(error) ? error : { key: "errNetwork" });
         }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale, ready]);
 
   const selected = weapons.find((weapon) => weapon.id === weaponId) ?? null;
   const magazineClassForBuild: MagazineClass =
@@ -136,7 +145,7 @@ export function OptimizerApp() {
       budget: budgetInput,
       traders,
       parts: snapshotParts,
-    });
+    }, locale);
     const next = serialized ? `${pathname}?${serialized}` : pathname;
     router.replace(next, { scroll: false });
   }, [
@@ -144,6 +153,7 @@ export function OptimizerApp() {
     flea,
     includeLoot,
     includeQuestLocked,
+    locale,
     magazineClassForBuild,
     objective,
     pathname,
@@ -169,7 +179,7 @@ export function OptimizerApp() {
   const requestBuild = useCallback(
     async (placed?: SnapshotPart[]) => {
       if (!weaponId) {
-        setOptError("Choisis une arme.");
+        setOptError({ key: "pickWeapon" });
         return;
       }
       setBusy(true);
@@ -192,21 +202,20 @@ export function OptimizerApp() {
             magazineClass: magazineClassForBuild,
             traders,
             parts: placed?.length ? placed : undefined,
+            lang: locale,
           }),
         });
         const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error ?? "Optimisation échouée");
+        if (!response.ok) throw mapApiError(payload);
         const optimized = payload as OptimizeResult;
         setResult(optimized);
         setSnapshotParts(snapshotFromResult(optimized.parts));
         if (requireSuppressor && !optimized.hasSuppressor) {
-          setOptError(
-            "Aucun silencieux compatible avec cette arme et tes déblocages.",
-          );
+          setOptError({ key: "noSuppressor" });
         }
       } catch (error: unknown) {
         setResult(null);
-        setOptError(error instanceof Error ? error.message : "Erreur");
+        setOptError(isI18nError(error) ? error : { key: "errGeneric" });
       } finally {
         setBusy(false);
       }
@@ -216,6 +225,7 @@ export function OptimizerApp() {
       flea,
       includeLoot,
       includeQuestLocked,
+      locale,
       magazineClassForBuild,
       objective,
       requireSuppressor,
@@ -223,6 +233,18 @@ export function OptimizerApp() {
       weaponId,
     ],
   );
+
+  useEffect(() => {
+    if (!ready) return;
+    if (prevLocaleRef.current === null) {
+      prevLocaleRef.current = locale;
+      return;
+    }
+    if (prevLocaleRef.current === locale) return;
+    prevLocaleRef.current = locale;
+    const placed = snapshotRef.current;
+    if (placed.length) void requestBuild(placed);
+  }, [locale, ready, requestBuild]);
 
   useEffect(() => {
     if (!weaponId || !weapons.length) return;
@@ -250,7 +272,7 @@ export function OptimizerApp() {
         budget: budgetInput,
         traders,
         parts: snapshotParts,
-      });
+      }, locale);
       const url = `${window.location.origin}${pathname}${serialized ? `?${serialized}` : ""}`;
       await navigator.clipboard.writeText(url);
       setCopyState("ok");
@@ -265,7 +287,12 @@ export function OptimizerApp() {
     if (!result) return;
     try {
       await navigator.clipboard.writeText(
-        shoppingListText(result.weaponName, result.parts, result.costRub),
+        shoppingListText(result.weaponName, result.parts, result.costRub, {
+          heading: t("shoppingHeading"),
+          total: t("shoppingTotal"),
+          locale: numberLocale,
+          unavailable: t("unavailable"),
+        }),
       );
       setCopyListState("ok");
       window.setTimeout(() => setCopyListState("idle"), 1600);
@@ -290,7 +317,9 @@ export function OptimizerApp() {
 
       {loadError ? (
         <p className="chamfer-sm mx-4 mt-4 bg-danger-deep/60 px-4 py-3 font-mono text-xs text-danger sm:mx-6">
-          Impossible de charger le catalogue : {loadError}
+          {t("catalogError", {
+            detail: t(loadError.key, loadError.vars),
+          })}
         </p>
       ) : null}
 
@@ -341,7 +370,9 @@ export function OptimizerApp() {
             copyState={copyState}
             canCopy={Boolean(weaponId)}
             onCopyLink={() => void copyShareLink()}
-            optError={optError}
+            optError={
+              optError ? t(optError.key, optError.vars) : null
+            }
           />
         </div>
 

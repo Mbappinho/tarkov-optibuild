@@ -44,16 +44,29 @@ export function shoppingListText(
   weaponName: string,
   parts: BuildPart[],
   totalRub: number,
+  labels: {
+    heading: string;
+    total: string;
+    locale: string;
+    unavailable: string;
+  },
 ): string {
-  const lines = [`Liste d’achat — ${weaponName}`];
+  const lines = [labels.heading.replace("{name}", weaponName)];
   for (const group of shoppingList(parts)) {
-    lines.push(group.vendor);
+    lines.push(
+      group.vendor === "Indispo" ? labels.unavailable : group.vendor,
+    );
     for (const line of group.lines) {
       lines.push(
-        `  ${line.shortName} (${line.slotName}) — ${Math.round(line.priceRub).toLocaleString("fr-FR")} ₽`,
+        `  ${line.shortName} (${line.slotName}) — ${Math.round(line.priceRub).toLocaleString(labels.locale)} ₽`,
       );
     }
   }
-  lines.push(`Total : ${Math.round(totalRub).toLocaleString("fr-FR")} ₽`);
+  lines.push(
+    labels.total.replace(
+      "{cost}",
+      `${Math.round(totalRub).toLocaleString(labels.locale)} ₽`,
+    ),
+  );
   return lines.join("\n");
 }

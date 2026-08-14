@@ -6,7 +6,7 @@ Tu choisis une arme, tes niveaux de traders, le flea et un objectif (recul, ergo
 
 Site : [tarkov-optibuild.vercel.app](https://tarkov-optibuild.vercel.app). Données : [json.tarkov.dev](https://json.tarkov.dev) (même source que [tarkov.dev](https://tarkov.dev)). **Non affilié à Battlestate Games.**
 
-Soutenir : [Ko-fi](https://ko-fi.com/T1P023QR7T). Bugs et idées : bouton **Bug / idée** sur le site, ou [issues GitHub](https://github.com/Mbappinho/tarkov-optibuild/issues) (review avant merge).
+Soutenir : [Ko-fi](https://ko-fi.com/T1P023QR7T). Bugs et idées : bouton **Bug / idée** sur le site, ou [issues GitHub](https://github.com/Mbappinho/tarkov-optibuild/issues) (review avant merge). Langue : anglais par défaut, petit bouton **FR** / **EN** à côté du titre (mémorisé dans le navigateur). Un lien de build collé sur Discord affiche un embed (titre, objectif, image).
 
 ## Lancer en local
 
@@ -36,7 +36,8 @@ Avant une mise en ligne : le repo public est `Mbappinho/tarkov-optibuild`. Hébe
 - Liste d’achat groupée par trader / flea / loot
 - Panneau **Modding** (grille Edit Preset : cases 64px, slots vides visibles)
 - Boîtiers carry handle (M16A1E1 / M16A2) exclus s’il existe un upper picatinny achetable
-- Interface française
+- Interface FR / EN (anglais par défaut, petit bouton à côté du titre, préférence `localStorage`)
+- Embed Discord / Open Graph sur les liens de build (`/og`)
 - Pied de page + `/legal` (avertissement, source, vie privée)
 - Bouton **Bug / idée** (issue GitHub préremplie) et lien **Ko-fi**
 

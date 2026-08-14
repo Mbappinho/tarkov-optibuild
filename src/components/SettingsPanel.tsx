@@ -1,3 +1,5 @@
+"use client";
+
 import { TRADER_LABELS } from "@/lib/tarkov/defaults";
 import { GUN_TRADERS } from "@/lib/tarkov/types";
 import type {
@@ -7,25 +9,8 @@ import type {
   TraderName,
   WeaponSummary,
 } from "@/lib/tarkov/types";
+import { useI18n } from "./I18nProvider";
 import { Panel, PipStepper, SegmentedControl, Toggle } from "./hud";
-
-const OBJECTIVE_SEGMENTS = [
-  {
-    id: "balanced",
-    label: "Équilibré",
-    hint: "Recul, ergo, poids ADS",
-  },
-  {
-    id: "recoil",
-    label: "Recul min",
-    hint: "Recul, puis ergo ≤ 100",
-  },
-  {
-    id: "ergonomics",
-    label: "Ergo max",
-    hint: "Ergo ≤ 100, puis recul",
-  },
-];
 
 export function SettingsPanel({
   objective,
@@ -78,28 +63,45 @@ export function SettingsPanel({
   onCopyLink: () => void;
   optError: string | null;
 }) {
+  const { t } = useI18n();
   const magazineSegments = [];
   if (selected?.hasStdMagazine) {
     magazineSegments.push({
       id: "std",
       label: "~30",
-      hint: "30 mini, ergo / chargement / vérif.",
+      hint: t("magStdHint"),
     });
   }
   if (selected?.hasDrumMagazine) {
     magazineSegments.push({
       id: "drum",
       label: "~60",
-      hint: "Même critères, 50–70 coups",
+      hint: t("magDrumHint"),
     });
   }
 
   return (
-    <Panel title="Paramètres" bodyClassName="gap-5">
+    <Panel title={t("settings")} bodyClassName="gap-5">
       <div className="flex flex-col gap-2">
-        <span className="hud-label">Objectif</span>
+        <span className="hud-label">{t("objective")}</span>
         <SegmentedControl
-          segments={OBJECTIVE_SEGMENTS}
+          segments={[
+            {
+              id: "balanced",
+              label: t("objectiveBalanced"),
+              hint: t("objectiveBalancedHint"),
+            },
+            {
+              id: "recoil",
+              label: t("objectiveRecoil"),
+              hint: t("objectiveRecoilHint"),
+            },
+            {
+              id: "ergonomics",
+              label: t("objectiveErgo"),
+              hint: t("objectiveErgoHint"),
+            },
+          ]}
           value={objective}
           onChange={(id) => onObjectiveChange(id as Objective)}
         />
@@ -107,7 +109,7 @@ export function SettingsPanel({
 
       {magazineSegments.length ? (
         <div className="flex flex-col gap-2">
-          <span className="hud-label">Chargeur</span>
+          <span className="hud-label">{t("magazine")}</span>
           <SegmentedControl
             segments={magazineSegments}
             value={magazineClass}
@@ -120,40 +122,36 @@ export function SettingsPanel({
         <Toggle
           checked={requireSuppressor}
           onChange={onSuppressorChange}
-          label="Silencieux"
-          hint={
-            requireSuppressor
-              ? "Le build doit en inclure un"
-              : "Optionnel — active pour l'imposer"
-          }
+          label={t("suppressor")}
+          hint={requireSuppressor ? t("suppressorOn") : t("suppressorOff")}
         />
-        <Toggle checked={flea} onChange={onFleaChange} label="Marché flea" />
+        <Toggle checked={flea} onChange={onFleaChange} label={t("fleaMarket")} />
         <Toggle
           checked={includeQuestLocked}
           onChange={onQuestLockedChange}
-          label="Pièces de quête"
+          label={t("questParts")}
         />
         <Toggle
           checked={includeLoot}
           onChange={onLootChange}
-          label="Loot hors trader-flea"
-          hint="GRIDLOK et pièces sans prix. Ref (GP) absent du dump."
+          label={t("lootParts")}
+          hint={t("lootHint")}
         />
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="hud-label">Budget max (optionnel)</span>
+        <span className="hud-label">{t("budget")}</span>
         <input
           value={budgetInput}
           onChange={(event) => onBudgetChange(event.target.value)}
           inputMode="numeric"
-          placeholder="ILLIMITÉ"
+          placeholder={t("budgetUnlimited")}
           className="chamfer-sm hud-panel-raised px-3 py-2 font-mono text-sm text-fog outline-none placeholder:text-muted/60 focus-visible:outline-signal"
         />
       </label>
 
       <div className="flex flex-col gap-3 border-t border-line pt-4">
-        <span className="hud-label">Niveaux traders</span>
+        <span className="hud-label">{t("traderLevels")}</span>
         <div className="grid grid-cols-1 gap-2.5">
           {GUN_TRADERS.map((trader) => (
             <div
@@ -167,6 +165,7 @@ export function SettingsPanel({
                 value={traders[trader]}
                 max={4}
                 onChange={(level) => onTraderChange(trader, level)}
+                levelAria={(level) => t("levelAria", { n: level })}
               />
             </div>
           ))}
@@ -180,7 +179,7 @@ export function SettingsPanel({
           disabled={busy || !canOptimize}
           className="chamfer bg-signal px-4 py-3 text-base font-bold tracking-[0.15em] text-ink uppercase transition-colors hover:bg-fog disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {busy ? "Recherche en cours…" : "Lancer la recherche"}
+          {busy ? t("searching") : t("searchCta")}
         </button>
         <button
           type="button"
@@ -189,10 +188,10 @@ export function SettingsPanel({
           className="chamfer hud-panel-raised px-4 py-2 text-sm font-semibold tracking-[0.12em] text-fog uppercase transition-colors hover:text-signal disabled:cursor-not-allowed disabled:opacity-40"
         >
           {copyState === "ok"
-            ? "Lien copié"
+            ? t("linkCopied")
             : copyState === "err"
-              ? "Copie impossible"
-              : "Copier le lien"}
+              ? t("copyFailed")
+              : t("copyLink")}
         </button>
       </div>
 

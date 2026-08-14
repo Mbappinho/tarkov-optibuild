@@ -1,6 +1,9 @@
+"use client";
+
 import { Panel } from "./hud";
 import type { ModdingSlot } from "@/lib/optimizer/modding";
 import { flattenModdingSlots, slotBoardLabel } from "@/lib/optimizer/modding";
+import { useI18n } from "./I18nProvider";
 
 export function ModdingBoard({
   weaponName,
@@ -17,11 +20,12 @@ export function ModdingBoard({
   highlightedSlotId: string | null;
   onSelectSlot: (slotId: string | null) => void;
 }) {
+  const { t, locale } = useI18n();
   const cells = flattenModdingSlots(tree);
   if (!cells.length) return null;
 
   return (
-    <Panel title="Modding" bodyClassName="gap-3">
+    <Panel title={t("modding")} bodyClassName="gap-3">
         <div className="flex items-center gap-3">
           {iconLink ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -48,7 +52,7 @@ export function ModdingBoard({
             const filled = Boolean(cell.part);
             const active = highlightedSlotId === cell.slotId;
             const emptyRequired = cell.required && !filled;
-            const label = slotBoardLabel(cell.slotNameId, cell.slotName);
+            const label = slotBoardLabel(cell.slotNameId, cell.slotName, locale);
             return (
               <button
                 key={cell.slotId}

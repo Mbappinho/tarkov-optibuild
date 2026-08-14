@@ -1,3 +1,4 @@
+import type { Locale } from "../i18n/locale";
 import { defaultTraderLevels } from "../tarkov/defaults";
 import { GUN_TRADERS } from "../tarkov/types";
 import type {
@@ -20,7 +21,10 @@ export type ShareState = {
   parts: SnapshotPart[];
 };
 
-export function serializeShareQuery(state: ShareState): string {
+export function serializeShareQuery(
+  state: ShareState,
+  locale: Locale = "en",
+): string {
   const params = new URLSearchParams();
   if (state.weaponId) params.set("w", state.weaponId);
   if (state.objective !== "balanced") params.set("obj", state.objective);
@@ -39,6 +43,7 @@ export function serializeShareQuery(state: ShareState): string {
       state.parts.map((part) => `${part.slotId}~${part.itemId}`).join(","),
     );
   }
+  if (locale === "fr") params.set("lang", "fr");
   return params.toString();
 }
 

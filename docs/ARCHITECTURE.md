@@ -11,10 +11,13 @@ Le produit est un **site**, pas un repo à lancer en local pour l’utilisateur 
 
 ## Flux
 
-1. `GET /api/weapons` — liste d’armes (id, nom, icône) depuis le catalogue caché.
+1. `GET /api/weapons?lang=fr|en` — liste d’armes (id, nom, icône) depuis le catalogue caché, noms selon la langue.
 2. L’utilisateur règle traders / flea / budget / objectif / chargeur / loot.
-3. `POST /api/optimize` — DFS (caché 1 h) **ou** hydrate un snapshot `parts` sans recherche.
+3. `POST /api/optimize` — DFS (caché 1 h, clé inclut `lang`) **ou** hydrate un snapshot `parts` sans recherche. Body `lang` pour les noms de pièces.
 4. Le front affiche le **panneau Modding** (grille de slots type Edit Preset), les stats, la liste d’achat, et met les ids dans l’URL.
+5. Un lien collé (Discord, Slack, etc.) lit les meta Open Graph : `generateMetadata` sur `/` + image `GET /og?w=&obj=&sil=&mag=&frozen=&lang=`.
+
+Langue par défaut : **anglais**. `?lang=fr` dans le lien sert à l’embed, pas à forcer l’UI du visiteur.
 
 ## Données
 
@@ -75,8 +78,14 @@ Optiques (`mod_scope`, `mod_nvg`) et lance-grenades (`mod_launcher`) sont **hors
 | Fichier | Rôle |
 | --- | --- |
 | `src/lib/tarkov/json-client.ts` | Fetch JSON + retry + cache Next 1 h |
-| `src/lib/tarkov/catalog.ts` | Mapping → `CatalogItem` |
-| `src/lib/site.ts` | Ko-fi, repo GitHub, User-Agent, URL d’issue |
+| `src/lib/tarkov/catalog.ts` | Mapping → `CatalogItem` (dump brut partagé, catalogues FR/EN) |
+| `src/lib/i18n/` | Dictionnaires FR/EN, détection locale, codes d’erreur API |
+| `src/components/I18nProvider.tsx` | Contexte client + `localStorage` `optibuild-lang` |
+| `src/components/LanguageToggle.tsx` | Petit bouton FR/EN (à côté du titre + `/legal`) |
+| `src/lib/site.ts` | Ko-fi, repo GitHub, User-Agent, URL d’issue, `SITE_ORIGIN` |
+| `src/lib/share/query.ts` | Lien partageable (`w`, `obj`, `p`, `lang=fr` si besoin) |
+| `src/lib/share/embed.ts` | Titre / description Open Graph d’un lien de build |
+| `src/app/og/route.tsx` | Image 1200×630 pour Discord / Twitter |
 | `src/lib/http/rate-limit.ts` | Quota mémoire par IP |
 | `src/app/legal/page.tsx` | Avertissement, source, vie privée, mentions |
 | `src/components/FeedbackDialog.tsx` | Formulaire bug / idée → lien GitHub (`<a target=_blank>`, templates `.md`) |
@@ -92,7 +101,7 @@ Optiques (`mod_scope`, `mod_nvg`) et lance-grenades (`mod_launcher`) sont **hors
 | `src/app/api/optimize/route.ts` | Endpoint site |
 | `src/components/OptimizerApp.tsx` | UI (état, logique, layout 3 colonnes). L’état de partage est lu une fois depuis l’URL au premier rendu ; le chargeur drum sans support est dérivé vers ~30 sans `useEffect`. |
 | `src/components/hud.tsx` | Primitives du design system (Panel, Toggle, SegmentedControl, PipStepper, StatBar, Tag) |
-| `src/components/TopBar.tsx` | Barre de statut (wordmark, méta catalogue, Bug / idée, Ko-fi) |
+| `src/components/TopBar.tsx` | Barre de statut (wordmark, méta catalogue, langue, Bug / idée, Ko-fi) |
 | `src/components/WeaponPicker.tsx` | Armurerie (recherche + liste) |
 | `src/components/SettingsPanel.tsx` | Paramètres (objectif, chargeur, traders, CTA) |
 | `src/components/BuildSheet.tsx` | Fiche technique du build (stats, pièces, liste d'achat) |
@@ -100,7 +109,7 @@ Optiques (`mod_scope`, `mod_nvg`) et lance-grenades (`mod_launcher`) sont **hors
 
 ## Design
 
-Style « HUD tactique » inspiré de l'UI in-game. Tokens dans `src/app/globals.css` (`@theme`) : fond charbon-olive `#0d0f0d`, panneaux `#151917`, accent tan-orange `#d08c46`, vert olive `#7fa653`, rouge `#c4483c`. Motif récurrent : coins chanfreinés (`.chamfer`, clip-path) et crochets de réticule (`.corner-brackets`) sur la sélection. Polices via `next/font/google` : Rajdhani (titres/labels) et JetBrains Mono (valeurs numériques). Layout desktop : 3 colonnes (armurerie / fiche technique / paramètres), pile verticale sur mobile. Au-dessus de la fiche : panneau Modding (cases 64×64). Pied de page : disclaimer + `/legal` + Ko-fi.
+Style « HUD tactique » inspiré de l'UI in-game. Tokens dans `src/app/globals.css` (`@theme`) : fond charbon-olive `#0d0f0d`, panneaux `#151917`, accent tan-orange `#d08c46`, vert olive `#7fa653`, rouge `#c4483c`. Motif récurrent : coins chanfreinés (`.chamfer`, clip-path) et crochets de réticule (`.corner-brackets`) sur la sélection. Polices via `next/font/google` : Rajdhani (titres/labels) et JetBrains Mono (valeurs numériques). Layout desktop : 3 colonnes (armurerie / fiche technique / paramètres), pile verticale sur mobile. Au-dessus de la fiche : panneau Modding (cases 64×64). Pied de page : disclaimer + `/legal` + Ko-fi. UI bilingue FR/EN : **anglais par défaut**, FR si le visiteur clique le bouton (persisté dans `localStorage`). Les liens de build exposent un embed Open Graph.
 
 ## Lancement public
 

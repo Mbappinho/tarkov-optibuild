@@ -35,7 +35,7 @@ export function consumeRateLimit(
 
 export function rateLimitResponse(retryAfterSec: number): Response {
   return Response.json(
-    { error: `Trop de requêtes. Réessaie dans ${retryAfterSec} s.` },
+    { error: "rate_limited", retryAfterSec },
     {
       status: 429,
       headers: { "Retry-After": String(retryAfterSec) },

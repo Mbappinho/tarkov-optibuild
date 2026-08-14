@@ -6,6 +6,7 @@ import {
   githubNewIssueUrl,
   type FeedbackKind,
 } from "@/lib/site";
+import { useI18n } from "./I18nProvider";
 import { SegmentedControl } from "./hud";
 
 export function FeedbackDialog({
@@ -19,6 +20,7 @@ export function FeedbackDialog({
   pageUrl?: string;
   weaponName?: string;
 }) {
+  const { t } = useI18n();
   const titleId = useId();
   const titleRef = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<FeedbackKind>("bug");
@@ -47,8 +49,20 @@ export function FeedbackDialog({
       details,
       pageUrl: liveUrl ?? pageUrl,
       weaponName,
-      userAgent: typeof navigator === "undefined" ? undefined : navigator.userAgent,
+      userAgent:
+        typeof navigator === "undefined" ? undefined : navigator.userAgent,
+      copy: {
+        heading: kind === "bug" ? t("issueBug") : t("issueIdea"),
+        empty: t("issueEmpty"),
+        context: t("issueContext"),
+        page: t("issuePage"),
+        weapon: t("issueWeapon"),
+        browser: t("issueBrowser"),
+        unknown: t("issueUnknown"),
+        none: t("issueNone"),
+      },
     }),
+    kind === "bug" ? t("issueTitleBug") : t("issueTitleIdea"),
   );
 
   return (
@@ -65,53 +79,52 @@ export function FeedbackDialog({
       >
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
           <h2 id={titleId} className="hud-label">
-            Bug / suggestion
+            {t("feedbackTitle")}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="font-mono text-[11px] tracking-wider text-muted uppercase hover:text-fog"
           >
-            Fermer
+            {t("close")}
           </button>
         </header>
         <div className="flex flex-col gap-4 p-4">
           <SegmentedControl
             segments={[
-              { id: "bug", label: "Bug", hint: "Quelque chose cloche" },
-              { id: "suggestion", label: "Idée", hint: "Amélioration" },
+              { id: "bug", label: t("bug"), hint: t("bugHint") },
+              { id: "suggestion", label: t("idea"), hint: t("ideaHint") },
             ]}
             value={kind}
             onChange={(id) => setKind(id as FeedbackKind)}
           />
           <label className="flex flex-col gap-1.5">
-            <span className="hud-label">Titre</span>
+            <span className="hud-label">{t("fieldTitle")}</span>
             <input
               ref={titleRef}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               maxLength={120}
               placeholder={
-                kind === "bug" ? "Ex. M4 recul min trop élevé" : "Ex. Filtrer par calibre"
+                kind === "bug"
+                  ? t("titlePlaceholderBug")
+                  : t("titlePlaceholderIdea")
               }
               className="chamfer-sm hud-panel-raised px-3 py-2 font-mono text-sm text-fog outline-none placeholder:text-muted/60 focus-visible:outline-signal"
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="hud-label">Détail</span>
+            <span className="hud-label">{t("fieldDetails")}</span>
             <textarea
               value={details}
               onChange={(event) => setDetails(event.target.value)}
               rows={6}
               maxLength={4000}
-              placeholder="Ce que tu attendais, ce qui s’est passé, arme / traders si utile."
+              placeholder={t("detailsPlaceholder")}
               className="chamfer-sm hud-panel-raised resize-y px-3 py-2 font-mono text-sm text-fog outline-none placeholder:text-muted/60 focus-visible:outline-signal"
             />
           </label>
-          <p className="text-[11px] leading-4 text-muted">
-            Ça ouvre GitHub dans un nouvel onglet (connexion requise). L’URL
-            actuelle et l’arme sélectionnée sont jointes pour le review.
-          </p>
+          <p className="text-[11px] leading-4 text-muted">{t("feedbackHelp")}</p>
           <a
             href={href}
             target="_blank"
@@ -121,7 +134,7 @@ export function FeedbackDialog({
               window.setTimeout(onClose, 200);
             }}
           >
-            Ouvrir sur GitHub
+            {t("openGithub")}
           </a>
         </div>
       </div>

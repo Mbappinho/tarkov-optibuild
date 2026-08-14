@@ -3,6 +3,7 @@ import {
   consumeRateLimit,
   rateLimitResponse,
 } from "@/lib/http/rate-limit";
+import { parseLocale } from "@/lib/i18n/locale";
 import { catalogStats, getCatalog } from "@/lib/tarkov/catalog";
 
 export const dynamic = "force-dynamic";
@@ -12,21 +13,13 @@ export async function GET(request: Request) {
   if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
 
   try {
-    const catalog = await getCatalog();
+    const lang = parseLocale(new URL(request.url).searchParams.get("lang"));
+    const catalog = await getCatalog(lang);
     return Response.json({
       weapons: catalog.weapons,
       meta: catalogStats(catalog),
     });
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Catalogue tarkov.dev indisponible";
-    return Response.json(
-      {
-        error: `Impossible de charger les armes depuis json.tarkov.dev (${message}). Réessaie dans quelques minutes.`,
-      },
-      { status: 502 },
-    );
+  } catch {
+    return Response.json({ error: "catalog_unavailable" }, { status: 502 });
   }
 }

@@ -4,12 +4,9 @@ import { useEffect, useState } from "react";
 import type { OptimizeResult } from "@/lib/optimizer/optimize";
 import { shoppingList } from "@/lib/optimizer/shopping";
 import type { WeaponSummary } from "@/lib/tarkov/types";
+import { useI18n } from "./I18nProvider";
 import { ModdingBoard } from "./ModdingBoard";
 import { Panel, StatBar, Tag } from "./hud";
-
-function formatRub(value: number): string {
-  return `${Math.round(value).toLocaleString("fr-FR")} ₽`;
-}
 
 function signed(value: number): string {
   const rounded = Math.round(value * 10) / 10;
@@ -21,6 +18,10 @@ function vendorTone(vendor: string): "signal" | "olive" | "muted" {
   if (lower.includes("flea")) return "olive";
   if (lower.includes("loot")) return "muted";
   return "signal";
+}
+
+function displayVendor(vendor: string, unavailable: string): string {
+  return vendor === "Indispo" ? unavailable : vendor;
 }
 
 export function BuildSheet({
@@ -36,6 +37,7 @@ export function BuildSheet({
   copyListState: "idle" | "ok" | "err";
   onCopyList: () => void;
 }) {
+  const { t, numberLocale } = useI18n();
   const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(
     null,
   );
@@ -46,10 +48,14 @@ export function BuildSheet({
     row?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [highlightedSlotId]);
 
+  function formatRub(value: number): string {
+    return `${Math.round(value).toLocaleString(numberLocale)} ₽`;
+  }
+
   if (!result) {
     return (
       <Panel
-        title="Fiche technique"
+        title={t("sheet")}
         className="min-h-80"
         bodyClassName="flex-1 items-center justify-center gap-4 text-center"
       >
@@ -63,16 +69,13 @@ export function BuildSheet({
         </span>
         <p className="text-lg font-bold tracking-[0.15em] text-fog uppercase">
           {busy
-            ? "Calcul du build…"
+            ? t("computing")
             : selected
-              ? `Prêt — ${selected.shortName}`
-              : "En attente de cible"}
+              ? t("ready", { name: selected.shortName })
+              : t("waitingTarget")}
         </p>
         <p className="max-w-md font-mono text-[11px] leading-5 text-muted">
-          Choisis une arme, règle tes traders, le flea et le budget, puis lance
-          la recherche. L’algo respecte la compatibilité des slots et les
-          conflits. Après un build, le lien fige les pièces. Optiques et
-          lance-grenades restent à ta charge.
+          {t("sheetHelp")}
         </p>
       </Panel>
     );
@@ -88,7 +91,7 @@ export function BuildSheet({
         highlightedSlotId={highlightedSlotId}
         onSelectSlot={setHighlightedSlotId}
       />
-      <Panel title="Fiche technique" bodyClassName="gap-5">
+      <Panel title={t("sheet")} bodyClassName="gap-5">
       <div className="flex items-start gap-4">
         {result.iconLink ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -103,14 +106,19 @@ export function BuildSheet({
             {result.weaponName}
           </h3>
           <p className="font-mono text-[11px] text-muted">
-            {result.parts.length} PIÈCES · {formatRub(result.costRub)}
+            {t("partsCount", {
+              count: result.parts.length,
+              cost: formatRub(result.costRub),
+            }).toUpperCase()}
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {result.hasSuppressor ? <Tag tone="signal">Silencieux</Tag> : null}
+            {result.hasSuppressor ? (
+              <Tag tone="signal">{t("suppressorTag")}</Tag>
+            ) : null}
             {result.snapshot ? (
-              <Tag tone="olive">Build figé</Tag>
+              <Tag tone="olive">{t("frozenBuild")}</Tag>
             ) : result.truncated ? (
-              <Tag tone="muted">Recherche limitée</Tag>
+              <Tag tone="muted">{t("truncated")}</Tag>
             ) : null}
           </div>
         </div>
@@ -118,42 +126,42 @@ export function BuildSheet({
 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         <StatBar
-          label="Recul V"
+          label={t("recoilV")}
           value={String(result.recoilVertical)}
           fraction={result.recoilVertical / 150}
           tone="danger"
         />
         <StatBar
-          label="Recul H"
+          label={t("recoilH")}
           value={String(result.recoilHorizontal)}
           fraction={result.recoilHorizontal / 150}
           tone="danger"
         />
         <StatBar
-          label="Ergo"
+          label={t("ergo")}
           value={String(result.ergonomics)}
           fraction={result.ergonomics / 100}
           tone="olive"
         />
         <StatBar
-          label="Poids"
-          value={`${result.weightKg.toLocaleString("fr-FR", { maximumFractionDigits: 2 })} kg`}
+          label={t("weight")}
+          value={`${result.weightKg.toLocaleString(numberLocale, { maximumFractionDigits: 2 })} kg`}
           fraction={result.weightKg / 8}
         />
         <StatBar
-          label="Chauffe"
+          label={t("heat")}
           value={`${result.heatPercent > 0 ? "+" : ""}${result.heatPercent}%`}
           tone={result.heatPercent > 0 ? "danger" : "olive"}
         />
         <StatBar
-          label="Refroid."
+          label={t("cooling")}
           value={`${result.coolingPercent > 0 ? "+" : ""}${result.coolingPercent}%`}
           tone={result.coolingPercent > 0 ? "olive" : "muted"}
         />
       </dl>
 
       <div className="flex flex-col gap-2">
-        <span className="hud-label">Pièces</span>
+        <span className="hud-label">{t("partsLabel")}</span>
         <ul className="flex flex-col gap-1">
           {result.parts.map((part) => (
             <li
@@ -192,7 +200,7 @@ export function BuildSheet({
                   </span>
                 </p>
                 <p>
-                  {part.weight.toLocaleString("fr-FR", {
+                  {part.weight.toLocaleString(numberLocale, {
                     maximumFractionDigits: 2,
                   })}{" "}
                   kg
@@ -205,7 +213,9 @@ export function BuildSheet({
                 </p>
               </div>
               <div className="flex w-24 shrink-0 flex-col items-end gap-1">
-                <Tag tone={vendorTone(part.vendor)}>{part.vendor || "—"}</Tag>
+                <Tag tone={vendorTone(part.vendor)}>
+                  {displayVendor(part.vendor, t("unavailable")) || "—"}
+                </Tag>
                 <span className="font-mono text-[10px] text-fog">
                   {formatRub(part.priceRub)}
                 </span>
@@ -217,23 +227,24 @@ export function BuildSheet({
 
       <div className="flex flex-col gap-3 border-t border-line pt-4">
         <div className="flex items-center justify-between gap-3">
-          <span className="hud-label">Liste d’achat</span>
+          <span className="hud-label">{t("shoppingList")}</span>
           <button
             type="button"
             onClick={onCopyList}
             className="chamfer-sm hud-panel-raised px-3 py-1.5 font-mono text-[11px] tracking-wider text-fog uppercase transition-colors hover:text-signal"
           >
             {copyListState === "ok"
-              ? "Liste copiée"
+              ? t("listCopied")
               : copyListState === "err"
-                ? "Copie impossible"
-                : "Copier la liste"}
+                ? t("copyFailed")
+                : t("copyList")}
           </button>
         </div>
         {shoppingList(result.parts).map((group) => (
           <div key={group.vendor} className="flex flex-col gap-1">
             <p className="font-mono text-[11px] font-semibold tracking-[0.14em] text-signal uppercase">
-              {group.vendor} · {formatRub(group.totalRub)}
+              {displayVendor(group.vendor, t("unavailable"))} ·{" "}
+              {formatRub(group.totalRub)}
             </p>
             <ul className="flex flex-col gap-0.5">
               {group.lines.map((line) => (
@@ -260,7 +271,7 @@ export function BuildSheet({
           </div>
         ))}
         <p className="flex items-baseline justify-between gap-2 border-t border-line pt-3">
-          <span className="hud-label">Total</span>
+          <span className="hud-label">{t("total")}</span>
           <span className="font-mono text-lg font-semibold text-fog">
             {formatRub(result.costRub)}
           </span>

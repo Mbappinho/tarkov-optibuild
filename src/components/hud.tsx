@@ -147,11 +147,13 @@ export function PipStepper({
   max,
   onChange,
   format = (level: number) => `LL${level}`,
+  levelAria,
 }: {
   value: number;
   max: number;
   onChange: (level: number) => void;
   format?: (level: number) => string;
+  levelAria?: (level: number) => string;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -162,7 +164,7 @@ export function PipStepper({
           <button
             key={level}
             type="button"
-            aria-label={`Niveau ${level}`}
+            aria-label={levelAria ? levelAria(level) : `LL${level}`}
             aria-pressed={level === value}
             onClick={() => onChange(level)}
             className={`h-3.5 w-6 skew-x-[-12deg] transition-colors ${

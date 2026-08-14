@@ -1,3 +1,9 @@
+export const SITE_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/^https?:\/\//, "")}`
+    : "https://tarkov-optibuild.vercel.app");
+
 export const GITHUB_REPO =
   process.env.NEXT_PUBLIC_GITHUB_REPO ?? "Mbappinho/tarkov-optibuild";
 
@@ -19,12 +25,13 @@ export function githubNewIssueUrl(
   kind: FeedbackKind,
   title: string,
   body: string,
+  fallbackTitle: string,
 ): string {
   const labels = kind === "bug" ? "bug" : "enhancement";
   const template = kind === "bug" ? "bug.md" : "suggestion.md";
   const params = new URLSearchParams({
     template,
-    title: title.trim() || (kind === "bug" ? "[bug] " : "[idée] "),
+    title: title.trim() || fallbackTitle,
     labels,
     body: body.slice(0, BODY_MAX),
   });
@@ -37,18 +44,28 @@ export function feedbackIssueBody(input: {
   pageUrl?: string;
   weaponName?: string;
   userAgent?: string;
+  copy: {
+    heading: string;
+    empty: string;
+    context: string;
+    page: string;
+    weapon: string;
+    browser: string;
+    unknown: string;
+    none: string;
+  };
 }): string {
   const ua = (input.userAgent ?? "").slice(0, 180);
   const lines = [
-    `## ${input.kind === "bug" ? "Bug" : "Suggestion"}`,
+    `## ${input.copy.heading}`,
     "",
-    input.details.trim() || "_Pas de détail._",
+    input.details.trim() || `_${input.copy.empty}_`,
     "",
-    "## Contexte",
+    `## ${input.copy.context}`,
     "",
-    `- Page : ${input.pageUrl || "inconnue"}`,
-    `- Arme : ${input.weaponName || "aucune"}`,
-    `- Navigateur : ${ua || "inconnu"}`,
+    `- ${input.copy.page} : ${input.pageUrl || input.copy.unknown}`,
+    `- ${input.copy.weapon} : ${input.weaponName || input.copy.none}`,
+    `- ${input.copy.browser} : ${ua || input.copy.unknown}`,
   ];
   return lines.join("\n");
 }

@@ -13,13 +13,14 @@ export function cachedOptimize(
   weaponId: string,
   constraints: OptimizeConstraints,
   compute: () => OptimizeResult,
+  locale = "en",
 ): OptimizeResult {
   if (catalogStamp !== catalogFetchedAt) {
     memory.clear();
     catalogStamp = catalogFetchedAt;
   }
 
-  const key = cacheKey(weaponId, constraints);
+  const key = cacheKey(weaponId, constraints, locale);
   const hit = memory.get(key);
   if (hit) return hit.result;
 
@@ -28,9 +29,14 @@ export function cachedOptimize(
   return result;
 }
 
-function cacheKey(weaponId: string, constraints: OptimizeConstraints): string {
+function cacheKey(
+  weaponId: string,
+  constraints: OptimizeConstraints,
+  locale: string,
+): string {
   return JSON.stringify({
-    v: 4,
+    v: 5,
+    locale,
     weaponId,
     objective: constraints.objective,
     flea: constraints.flea,

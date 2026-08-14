@@ -1,6 +1,7 @@
 import type { Catalog, CatalogItem, ItemSlot } from "../tarkov/types";
 import { defaultConstraints } from "../tarkov/defaults";
 import { parseShareQuery, serializeShareQuery } from "../share/query";
+import { buildEmbed } from "../share/embed";
 import { hydrateBuild } from "./hydrate";
 import { flattenModdingSlots, slotBoardLabel } from "./modding";
 import { optimizeWeapon } from "./optimize";
@@ -813,6 +814,36 @@ assert(parsedShare.requireSuppressor === true, "lien: silencieux");
 assert(parsedShare.magazineClass === "drum", "lien: mag 60");
 assert(parsedShare.includeLoot === false, "lien: loot off");
 assert(parsedShare.parts?.[0]?.itemId === "muzzle-recoil", "lien: pièce figée");
+const shareFr = serializeShareQuery(
+  {
+    weaponId: "abc",
+    objective: "recoil",
+    requireSuppressor: true,
+    magazineClass: "drum",
+    flea: true,
+    includeQuestLocked: false,
+    includeLoot: false,
+    budget: "",
+    traders: defaultConstraints().traders,
+    parts: [{ slotId: "muzzle", itemId: "muzzle-recoil" }],
+  },
+  "fr",
+);
+assert(shareFr.includes("lang=fr"), "lien: lang fr");
+const embedEn = buildEmbed(new URLSearchParams("obj=recoil&sil=1"), {
+  name: "Colt M4A1",
+  shortName: "M4A1",
+  iconLink: null,
+});
+assert(embedEn.title.includes("M4A1"), "embed: titre");
+assert(embedEn.locale === "en", "embed: en par défaut");
+assert(
+  embedEn.tags.some((tag) => tag.toLowerCase().includes("recoil")),
+  "embed: objectif",
+);
+const embedFr = buildEmbed(new URLSearchParams("lang=fr&frozen=1"), null);
+assert(embedFr.locale === "fr", "embed: fr");
+assert(embedFr.title === "Tarkov Optibuild", "embed: site sans arme");
 
 const hydrated = hydrateBuild(
   catalog,
@@ -866,12 +897,22 @@ assert(
     nestedFlat.findIndex((slot) => slot.slotId === "mod_muzzle_001"),
   "modding nested: parent avant enfant",
 );
-assert(slotBoardLabel("mod_barrel", "x") === "CANON", "modding: label canon");
-assert(slotBoardLabel("mod_muzzle_001", "x") === "MUSE", "modding: label muse");
+assert(slotBoardLabel("mod_barrel", "x", "fr") === "CANON", "modding: label canon");
+assert(slotBoardLabel("mod_muzzle_001", "x", "fr") === "MUSE", "modding: label muse");
 
 const shop = shoppingList(hydrated.parts);
 assert(shop.length >= 1, "liste d’achat: groupe");
-const shopText = shoppingListText(hydrated.weaponName, hydrated.parts, hydrated.costRub);
+const shopText = shoppingListText(
+  hydrated.weaponName,
+  hydrated.parts,
+  hydrated.costRub,
+  {
+    heading: "Liste d’achat — {name}",
+    total: "Total : {cost}",
+    locale: "fr-FR",
+    unavailable: "Indispo",
+  },
+);
 assert(shopText.includes("Liste d’achat"), "liste d’achat: titre");
 assert(shopText.includes("Total"), "liste d’achat: total");
 

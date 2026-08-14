@@ -7,6 +7,7 @@ import {
   consumeRateLimit,
   rateLimitResponse,
 } from "@/lib/http/rate-limit";
+import { parseLocale } from "@/lib/i18n/locale";
 import { getCatalog } from "@/lib/tarkov/catalog";
 import { defaultTraderLevels } from "@/lib/tarkov/defaults";
 import type {
@@ -31,6 +32,7 @@ type Body = {
   requireSuppressor?: boolean;
   magazineClass?: MagazineClass;
   parts?: SnapshotPart[];
+  lang?: string;
 };
 
 function parseConstraints(body: Body): OptimizeConstraints {
@@ -92,10 +94,11 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Body;
     if (!body.weaponId) {
-      return Response.json({ error: "weaponId requis" }, { status: 400 });
+      return Response.json({ error: "weapon_required" }, { status: 400 });
     }
 
-    const catalog = await getCatalog();
+    const lang = parseLocale(body.lang);
+    const catalog = await getCatalog(lang);
     const constraints = parseConstraints(body);
     let snapshot = parseSnapshot(body.parts);
     if (
@@ -116,10 +119,18 @@ export async function POST(request: Request) {
           body.weaponId,
           constraints,
           () => optimizeWeapon(catalog, body.weaponId as string, constraints),
+          lang,
         );
     return Response.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Optimisation impossible";
-    return Response.json({ error: message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "";
+    const code = message.includes("Arme introuvable")
+      ? "weapon_not_found"
+      : message.includes("Aucune pièce")
+        ? "no_parts"
+        : message.includes("Pièce introuvable")
+          ? "part_not_found"
+          : "optimize_failed";
+    return Response.json({ error: code }, { status: 500 });
   }
 }

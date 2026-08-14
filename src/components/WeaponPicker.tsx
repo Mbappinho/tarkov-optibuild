@@ -1,4 +1,7 @@
+"use client";
+
 import type { WeaponSummary } from "@/lib/tarkov/types";
+import { useI18n } from "./I18nProvider";
 import { Panel } from "./hud";
 
 export function WeaponPicker({
@@ -16,14 +19,16 @@ export function WeaponPicker({
   onSelect: (weapon: WeaponSummary) => void;
   loading: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <Panel
-      title="Armurerie"
+      title={t("armory")}
       className="max-h-[70vh] min-h-0 flex-1 lg:max-h-none"
       bodyClassName="min-h-0 flex-1 gap-3"
     >
       <label className="flex flex-col gap-1.5">
-        <span className="hud-label">Recherche</span>
+        <span className="hud-label">{t("search")}</span>
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
@@ -83,12 +88,12 @@ export function WeaponPicker({
         </ul>
         {loading ? (
           <p className="px-3 py-4 font-mono text-xs text-muted">
-            CHARGEMENT DU CATALOGUE…
+            {t("loadingCatalog").toUpperCase()}
           </p>
         ) : null}
         {!loading && !weapons.length ? (
           <p className="px-3 py-4 font-mono text-xs text-muted">
-            AUCUNE ARME NE CORRESPOND
+            {t("noWeapons").toUpperCase()}
           </p>
         ) : null}
       </div>

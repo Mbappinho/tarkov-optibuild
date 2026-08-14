@@ -69,6 +69,6 @@ Import stash, 4ᵉ objectif, retune des coeffs équilibré, offres Ref/GP.
 
 ## Lancement site
 
-Livré dans le code : disclaimer, `/legal`, cache fetch 1 h, User-Agent, rate-limit, bouton Bug / idée → GitHub, Ko-fi.
+Livré dans le code : disclaimer, `/legal`, cache fetch 1 h, User-Agent, rate-limit, bouton Bug / idée → GitHub, Ko-fi, UI FR/EN (anglais par défaut), embed Discord sur les liens de build.
 
 Prod : [tarkov-optibuild.vercel.app](https://tarkov-optibuild.vercel.app). Repo GitHub lié à Vercel.

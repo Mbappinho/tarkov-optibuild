@@ -1,4 +1,5 @@
 import { magazineFlags } from "../optimizer/magazine";
+import { parseLocale, type Locale } from "../i18n/locale";
 import { JSON_PATHS, fetchTarkovJson } from "./json-client";
 import type {
   Catalog,
@@ -100,8 +101,17 @@ const TRADER_NAMES = new Set<TraderName>([
 
 const CATALOG_TTL_MS = 60 * 60 * 1000;
 
-let memoryCache: { expiresAt: number; catalog: Catalog } | null = null;
-let inflight: Promise<Catalog> | null = null;
+type RawBundle = {
+  itemsPayload: ItemsPayload;
+  tradersPayload: TradersPayload;
+  localeFr: LocaleMap;
+  localeEn: LocaleMap;
+};
+
+let rawCache: { expiresAt: number; bundle: RawBundle } | null = null;
+let rawInflight: Promise<RawBundle> | null = null;
+const catalogs = new Map<Locale, Catalog>();
+const catalogInflight = new Map<Locale, Promise<Catalog>>();
 
 function asIdList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -268,7 +278,7 @@ function mapItem(
   };
 }
 
-function indexCatalog(items: CatalogItem[]): Catalog {
+function indexCatalog(items: CatalogItem[], locale: Locale): Catalog {
   const map = new Map<string, CatalogItem>();
   for (const item of items) map.set(item.id, item);
 
@@ -314,7 +324,7 @@ function indexCatalog(items: CatalogItem[]): Catalog {
         hasDrumMagazine: flags.hasDrumMagazine,
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
 
   return catalog;
 }
@@ -328,42 +338,69 @@ function traderIndex(payload: TradersPayload): Map<string, TraderName | string> 
   return map;
 }
 
-async function downloadCatalog(): Promise<Catalog> {
-  const [itemsPayload, tradersPayload, localeFr, localeEn] = await Promise.all([
+async function loadRawBundle(): Promise<RawBundle> {
+  if (rawCache && rawCache.expiresAt > Date.now()) return rawCache.bundle;
+  if (rawInflight) return rawInflight;
+
+  rawInflight = Promise.all([
     fetchTarkovJson<ItemsPayload>(JSON_PATHS.items),
     fetchTarkovJson<TradersPayload>(JSON_PATHS.traders),
     fetchTarkovJson<LocalePayload>(JSON_PATHS.localeFr),
     fetchTarkovJson<LocalePayload>(JSON_PATHS.localeEn),
-  ]);
+  ])
+    .then(([itemsPayload, tradersPayload, localeFr, localeEn]) => {
+      const bundle: RawBundle = {
+        itemsPayload,
+        tradersPayload,
+        localeFr: localeFr.data ?? {},
+        localeEn: localeEn.data ?? {},
+      };
+      rawCache = { bundle, expiresAt: Date.now() + CATALOG_TTL_MS };
+      catalogs.clear();
+      return bundle;
+    })
+    .finally(() => {
+      rawInflight = null;
+    });
 
-  const locales = [localeFr.data ?? {}, localeEn.data ?? {}];
-  const traders = traderIndex(tradersPayload);
+  return rawInflight;
+}
+
+function buildCatalog(bundle: RawBundle, locale: Locale): Catalog {
+  const locales =
+    locale === "en"
+      ? [bundle.localeEn, bundle.localeFr]
+      : [bundle.localeFr, bundle.localeEn];
+  const traders = traderIndex(bundle.tradersPayload);
   const mapped: CatalogItem[] = [];
 
-  for (const raw of Object.values(itemsPayload.data?.items ?? {})) {
+  for (const raw of Object.values(bundle.itemsPayload.data?.items ?? {})) {
     const item = mapItem(raw, locales, traders);
     if (item) mapped.push(item);
   }
 
-  return indexCatalog(mapped);
+  return indexCatalog(mapped, locale);
 }
 
-export async function getCatalog(): Promise<Catalog> {
-  if (memoryCache && memoryCache.expiresAt > Date.now()) {
-    return memoryCache.catalog;
-  }
-  if (inflight) return inflight;
+export async function getCatalog(locale: Locale | string = "en"): Promise<Catalog> {
+  const lang = parseLocale(locale);
+  const cached = catalogs.get(lang);
+  if (cached && rawCache && rawCache.expiresAt > Date.now()) return cached;
 
-  inflight = downloadCatalog()
-    .then((catalog) => {
-      memoryCache = { catalog, expiresAt: Date.now() + CATALOG_TTL_MS };
-      return catalog;
-    })
-    .finally(() => {
-      inflight = null;
-    });
+  const pending = catalogInflight.get(lang);
+  if (pending) return pending;
 
-  return inflight;
+  const work = loadRawBundle().then((bundle) => {
+    const existing = catalogs.get(lang);
+    if (existing && rawCache && rawCache.expiresAt > Date.now()) return existing;
+    const catalog = buildCatalog(bundle, lang);
+    catalogs.set(lang, catalog);
+    return catalog;
+  }).finally(() => {
+    catalogInflight.delete(lang);
+  });
+  catalogInflight.set(lang, work);
+  return work;
 }
 
 export function catalogStats(catalog: Catalog) {
