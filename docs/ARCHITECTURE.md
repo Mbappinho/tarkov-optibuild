@@ -62,6 +62,7 @@ Optiques (`mod_scope`, `mod_nvg`) et lance-grenades (`mod_launcher`) sont **hors
 - Ergo max : dès que l’ergo effective atteint 100, le surplus est ignoré ; on bascule sur recul puis thermo.
 - Équilibré : recul + masse de handling `poids × (1 - ergo/100 + 0,35)`, sans seuil d’ergo. Le poids du chargeur joueur compte.
 - Après la recherche, les slots restants à recul 0 et ergo > 0 (crans de mire) sont remplis.
+- **Budget** : on réserve le coût min des slots **requis** restants (et de leurs enfants requis). Un slot requis n’est jamais laissé vide s’il existe une pièce achetable ; le solveur prend des pièces moins chères pour rester dans l’enveloppe au lieu de démonter l’arme.
 - Bouton **Silencieux** : le build doit contenir un item `types: suppressor` (direct ou via adaptateur type WAVE). Recul/ergo restent le critère principal *parmi* les builds silencieux.
 - Timeout **4 s / 650k nœuds** : le résultat peut être marqué `truncated`. Profiling 2026-08-13 : ~80 % du wall clock est le ranking (`conflictAwarePotential`), pas le DFS. Cache par **objet** slot (`resolveSlotItems`, `slotExplosion`). Oracle local 30 s : même recul min Model 1 (**44,6**, 20") qu’en 4 s — ce n’est pas une preuve d’optimum global.
 - Les pièces sans prix trader/flea (loot, ex. GRIDLOK) sont utilisables si l’option loot est on (`Loot`). Ref vend souvent ces pièces en GP, mais json.tarkov.dev n’expose pas ses offres.

@@ -29,7 +29,7 @@ Avant une mise en ligne : le repo public est `Mbappinho/tarkov-optibuild`. Hébe
 - Viseurs optiques et lance-grenades exclus ; crans de mire inclus
 - Chargeur joueur : classique 30–40 ou drum ~60 (ergo, puis chargement, puis vérif. ; pas d’arbre mag ; pas de 100)
 - Pièces loot (sans trader/flea, ex. GRIDLOK) optionnelles — Ref/GP n’est pas dans le dump
-- Filtres traders LL1–4, flea, budget optionnel, pièces de quête on/off
+- Filtres traders LL1–4, flea, budget optionnel (l’arme reste complète : pièces requises conservées, mods moins chers), pièces de quête on/off
 - Objectifs : recul min, ergo max (plafond 100), équilibré (recul + poids + ergo, sans seuil)
 - Bouton silencieux : impose un silencieux compatible, puis optimise le reste
 - Lien partageable : réglages + **pièces figées** dans l’URL

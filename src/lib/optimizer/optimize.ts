@@ -145,6 +145,7 @@ type SearchState = {
   weapon: CatalogItem;
   slotItemCache: Map<ItemSlot, CatalogItem[]>;
   slotExplosionCache: Map<ItemSlot, number>;
+  minFillCache: Map<ItemSlot, number>;
   profile: OptimizeProfile | null;
   barrelCandidates: Set<string>;
   barrelsVisited: Set<string>;
@@ -185,6 +186,52 @@ function itemsInSlot(slot: ItemSlot, state: SearchState): CatalogItem[] {
   }
   state.slotItemCache.set(slot, items);
   return items;
+}
+
+function slotHasPricedItems(slot: ItemSlot, state: SearchState): boolean {
+  for (const item of itemsInSlot(slot, state)) {
+    if (!state.available.has(item.id) || isPlayerChoiceItem(item, slot)) continue;
+    if (state.prices.has(item.id)) return true;
+  }
+  return false;
+}
+
+function minRequiredSlotsCost(
+  slots: ItemSlot[],
+  state: SearchState,
+  visiting: Set<string>,
+): number {
+  let sum = 0;
+  for (const slot of autoBuildSlots(slots)) {
+    if (!slot.required) continue;
+    sum += minSlotFillCost(slot, state, visiting);
+  }
+  return sum;
+}
+
+function minSlotFillCost(
+  slot: ItemSlot,
+  state: SearchState,
+  visiting: Set<string>,
+): number {
+  if (visiting.size === 0) {
+    const cached = state.minFillCache.get(slot);
+    if (cached !== undefined) return cached;
+  }
+  let min = Number.POSITIVE_INFINITY;
+  for (const item of itemsInSlot(slot, state)) {
+    if (!state.available.has(item.id) || isPlayerChoiceItem(item, slot)) continue;
+    if (visiting.has(item.id)) continue;
+    const offer = state.prices.get(item.id);
+    if (!offer) continue;
+    visiting.add(item.id);
+    const nested = minRequiredSlotsCost(item.slots, state, visiting);
+    visiting.delete(item.id);
+    min = Math.min(min, offer.priceRub + nested);
+  }
+  const value = Number.isFinite(min) ? min : 0;
+  if (visiting.size === 0) state.minFillCache.set(slot, value);
+  return value;
 }
 
 function slotProfile(state: SearchState, nameId: string): SlotProfile | null {
@@ -794,7 +841,7 @@ function rankItemWithLookahead(
 function slotCandidates(
   slot: ItemSlot,
   state: SearchState,
-  remainingBudget: number,
+  leftover: number,
   excludedItems: Set<string>,
   rest: ItemSlot[],
   ctx: RankContext,
@@ -803,6 +850,11 @@ function slotCandidates(
   const siblings = lookaheadSlots(rest, state);
   const emptyRank = rankWith(state, ctx);
   const cap = candidateCap(slot, state);
+  const reserved =
+    leftover === Number.POSITIVE_INFINITY
+      ? 0
+      : minRequiredSlotsCost(rest, state, new Set());
+  const spendable = leftover - reserved;
   let eligible: { item: CatalogItem; offer: { priceRub: number; label: string }; cheap: number }[] =
     [];
 
@@ -811,7 +863,11 @@ function slotCandidates(
     if (excludedItems.has(item.id)) continue;
     const offer = state.prices.get(item.id);
     if (!offer) continue;
-    if (offer.priceRub > remainingBudget) continue;
+    if (offer.priceRub > leftover) continue;
+    if (leftover !== Number.POSITIVE_INFINITY) {
+      const nested = minRequiredSlotsCost(item.slots, state, new Set());
+      if (offer.priceRub + nested > spendable) continue;
+    }
     const potential = computePotential(item, state, new Set());
     eligible.push({
       item,
@@ -853,6 +909,16 @@ function slotCandidates(
       pool.push(entry);
     }
   }
+  if (state.constraints.budget != null) {
+    const cheapest = [...eligible].sort(
+      (left, right) => left.offer.priceRub - right.offer.priceRub,
+    );
+    for (const entry of cheapest.slice(0, cap)) {
+      if (seen.has(entry.item.id)) continue;
+      seen.add(entry.item.id);
+      pool.push(entry);
+    }
+  }
 
   const ranked: Candidate[] = [];
   for (const entry of pool) {
@@ -875,14 +941,40 @@ function slotCandidates(
     state.constraints.requireSuppressor && suppressorCapable.length > 0
       ? suppressorCapable
       : ranked;
-  const limited = selected.slice(0, cap);
+  const cheapKeep =
+    state.constraints.budget != null ? Math.min(3, cap) : 0;
+  const limited: Candidate[] = [];
+  if (cheapKeep === 0) {
+    limited.push(...selected.slice(0, cap));
+  } else {
+    const topCount = Math.max(1, cap - cheapKeep);
+    const top = selected.slice(0, topCount);
+    const seen = new Set(
+      top.map((candidate) => candidate.item?.id).filter(Boolean),
+    );
+    limited.push(...top);
+    const byPrice = selected
+      .filter((candidate) => candidate.item)
+      .sort((left, right) => left.priceRub - right.priceRub);
+    for (const candidate of byPrice) {
+      if (limited.length >= cap) break;
+      const id = candidate.item?.id;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      limited.push(candidate);
+    }
+  }
 
   const best = limited[0];
   const skipEmpty =
     Boolean(isIronSightSlot(slot) && best?.item && best.rank > emptyRank) ||
     (state.constraints.requireSuppressor && Boolean(best?.hasSuppressor));
+  const allowEmpty =
+    !skipEmpty &&
+    (!slot.required ||
+      (limited.length === 0 && !slotHasPricedItems(slot, state)));
 
-  if ((!slot.required || limited.length === 0) && !skipEmpty) {
+  if (allowEmpty) {
     limited.push({
       item: null,
       priceRub: 0,
@@ -956,7 +1048,7 @@ function search(
 
   if (!canBeat(state, recoilSum, ergoSum, pending, weightKg)) return;
 
-  const remainingBudget =
+  const moneyLeft =
     state.constraints.budget == null
       ? Number.POSITIVE_INFINITY
       : Math.max(0, state.constraints.budget - spent);
@@ -966,7 +1058,7 @@ function search(
   const candidates = slotCandidates(
     slot,
     state,
-    remainingBudget,
+    moneyLeft,
     excludedItems,
     rest,
     { recoilSum, ergoSum, heat, cool, weight: weightKg },
@@ -1076,10 +1168,14 @@ function greedyFillLeftovers(state: SearchState): void {
     for (const slot of pending) {
       if (filled.has(slot.id) || excludedSlots.has(slot.id)) continue;
       if (!isIronSightSlot(slot)) continue;
+      const leftover =
+        state.constraints.budget == null
+          ? Number.POSITIVE_INFINITY
+          : Math.max(0, state.constraints.budget - state.bestCost);
       const candidates = slotCandidates(
         slot,
         state,
-        Number.POSITIVE_INFINITY,
+        leftover,
         excludedItems,
         [],
         {
@@ -1092,6 +1188,7 @@ function greedyFillLeftovers(state: SearchState): void {
       );
       const best = candidates.find((candidate) => candidate.item);
       if (!best?.item) continue;
+      if (best.priceRub > leftover) continue;
       if (
         best.rank <=
         rankWith(state, {
@@ -1253,6 +1350,7 @@ export function optimizeWeapon(
     weapon,
     slotItemCache: new Map(),
     slotExplosionCache: new Map(),
+    minFillCache: new Map(),
     profile: profileOn ? emptyProfile() : null,
     barrelCandidates: new Set(),
     barrelsVisited: new Set(),

@@ -263,6 +263,146 @@ assert(
   "conflit: meilleure crosse attendue",
 );
 
+function priced(
+  partial: Parameters<typeof item>[0],
+  priceRub: number,
+): CatalogItem {
+  return item({
+    ...partial,
+    avg24hPrice: priceRub,
+    offers: [
+      {
+        priceRub,
+        vendor: "Mechanic",
+        trader: "mechanic",
+        minTraderLevel: 1,
+        questLocked: false,
+        isFlea: false,
+      },
+    ],
+  });
+}
+
+const budgetGripMeta = priced(
+  { id: "budget-grip-meta", name: "Budget grip meta", recoilModifier: -20 },
+  8000,
+);
+const budgetGripCheap = priced(
+  { id: "budget-grip-cheap", name: "Budget grip cheap", recoilModifier: -2 },
+  500,
+);
+const budgetStock = priced(
+  { id: "budget-stock", name: "Budget stock", recoilModifier: -8 },
+  4000,
+);
+const budgetGun = item({
+  id: "budget-gun",
+  name: "Budget gun",
+  isWeapon: true,
+  baseRecoilVertical: 100,
+  baseRecoilHorizontal: 200,
+  baseErgonomics: 40,
+  slots: [
+    slot("grip", "Pistol Grip", ["budget-grip-meta", "budget-grip-cheap"], true),
+    slot("stock", "Stock", ["budget-stock"], true),
+  ],
+});
+const budgetCatalog = catalogOf([
+  budgetGun,
+  budgetGripMeta,
+  budgetGripCheap,
+  budgetStock,
+]);
+const budgetBuild = optimizeWeapon(budgetCatalog, "budget-gun", {
+  ...defaultConstraints(),
+  objective: "recoil",
+  flea: false,
+  includeLoot: false,
+  budget: 8000,
+});
+assert(
+  budgetBuild.parts.some((part) => part.itemId === "budget-grip-cheap"),
+  "budget: poignée cheap attendue",
+);
+assert(
+  budgetBuild.parts.some((part) => part.itemId === "budget-stock"),
+  "budget: crosse requise conservée",
+);
+assert(
+  budgetBuild.parts.every((part) => part.itemId !== "budget-grip-meta"),
+  "budget: poignée meta trop chère avec la crosse",
+);
+assert(budgetBuild.costRub <= 8000, "budget: total dans l’enveloppe");
+
+const budgetUpperMeta = priced(
+  {
+    id: "budget-upper-meta",
+    name: "Budget upper meta",
+    recoilModifier: -10,
+    slots: [slot("barrel", "Barrel", ["budget-barrel-meta"], true)],
+  },
+  6000,
+);
+const budgetBarrelMeta = priced(
+  { id: "budget-barrel-meta", name: "Budget barrel meta", recoilModifier: -15 },
+  5000,
+);
+const budgetUpperCheap = priced(
+  {
+    id: "budget-upper-cheap",
+    name: "Budget upper cheap",
+    recoilModifier: -1,
+    slots: [slot("barrel", "Barrel", ["budget-barrel-cheap"], true)],
+  },
+  1000,
+);
+const budgetBarrelCheap = priced(
+  { id: "budget-barrel-cheap", name: "Budget barrel cheap", recoilModifier: -2 },
+  1000,
+);
+const budgetNestedGun = item({
+  id: "budget-nested-gun",
+  name: "Budget nested gun",
+  isWeapon: true,
+  baseRecoilVertical: 100,
+  baseRecoilHorizontal: 200,
+  baseErgonomics: 40,
+  slots: [
+    slot(
+      "mod_reciever",
+      "Receiver",
+      ["budget-upper-meta", "budget-upper-cheap"],
+      true,
+    ),
+  ],
+});
+const nestedBudget = optimizeWeapon(
+  catalogOf([
+    budgetNestedGun,
+    budgetUpperMeta,
+    budgetBarrelMeta,
+    budgetUpperCheap,
+    budgetBarrelCheap,
+  ]),
+  "budget-nested-gun",
+  {
+    ...defaultConstraints(),
+    objective: "recoil",
+    flea: false,
+    includeLoot: false,
+    budget: 3000,
+  },
+);
+assert(
+  nestedBudget.parts.some((part) => part.itemId === "budget-upper-cheap"),
+  "budget nested: upper cheap",
+);
+assert(
+  nestedBudget.parts.some((part) => part.itemId === "budget-barrel-cheap"),
+  "budget nested: canon requis conservé",
+);
+assert(nestedBudget.costRub <= 3000, "budget nested: total dans l’enveloppe");
+
 const muzzleLoot = item({
   id: "muzzle-loot",
   name: "Muzzle loot",

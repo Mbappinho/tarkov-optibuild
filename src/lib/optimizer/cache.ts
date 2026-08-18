@@ -35,7 +35,7 @@ function cacheKey(
   locale: string,
 ): string {
   return JSON.stringify({
-    v: 5,
+    v: 6,
     locale,
     weaponId,
     objective: constraints.objective,
